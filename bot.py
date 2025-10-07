@@ -1,48 +1,48 @@
-import discord
-from discord.ext import commands
 import os
-from dotenv import load_dotenv
-from flask import Flask
 from threading import Thread
 
-# --- Flaskによるkeep-aliveサーバー ---
-app = Flask('')
+from flask import Flask
+from dotenv import load_dotenv
+import discord
+from discord.ext import commands
+
+# --- .env を読み込む ---
+load_dotenv()
+
+# --- Flaskによる keep-alive サーバー ---
+app = Flask(__name__)
 
 @app.route('/')
 def home():
     return "Bot is alive!"
 
 def run():
-    # ✅ Renderが環境変数PORTに割り当てたポートでFlaskを起動
+    # Render が割り当てる PORT を使う（重要）
     port = int(os.environ.get("PORT", 8080))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host="0.0.0.0", port=port)
 
 def keep_alive():
     t = Thread(target=run)
+    t.daemon = True
     t.start()
-# --- ここまで追加 ---
+# --- ここまで ---
 
-
-# --- .env ファイルを読み込む ---
-load_dotenv()
-
-# --- トークンを.envから取得 ---
+# --- トークンを .env から取得 ---
 TOKEN = os.getenv("DISCORD_TOKEN")
 
-# --- Intents設定 ---
+# --- Intents 設定 ---
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 intents.reactions = True
 intents.voice_states = True
-intents.messages = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # 👀マーク（Unicode形式）
 EYE_EMOJI = "\U0001F440"
 
-# 👀リアクションを監視するメッセージとチャンネル
+# 監視対象メッセージ / チャンネル（必要なら数値型に）
 TARGET_MESSAGE_ID = 1424867146386767883
 TARGET_CHANNEL_ID = 1424866996771623094
 
@@ -128,9 +128,9 @@ async def on_voice_state_update(member, before, after):
                 print(f"⚠️ リアクション削除中にエラー: {e}")
 
 
-# --- Bot起動 ---
+# --- Bot 起動 ---
 if TOKEN is None:
     print("❌ エラー: .env に DISCORD_TOKEN が設定されていません。")
 else:
-    keep_alive()  # Flaskサーバーを起動（Renderのヘルスチェック対策）
+    keep_alive()  # Render がヘルスチェックするための Flask を起動
     bot.run(TOKEN)
